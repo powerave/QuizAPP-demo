@@ -1,0 +1,76 @@
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - quizapp_redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 2s
+      retries: 10
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-quizapp}
+      POSTGRES_USER: ${POSTGRES_USER:-quizapp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-quizapp}
+    volumes:
+      - quizapp_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-quizapp} -d ${POSTGRES_DB:-quizapp}"]
+      interval: 3s
+      timeout: 2s
+      retries: 10
+
+  server:
+    build:
+      context: ./server
+    restart: unless-stopped
+    environment:
+      PORT: ${SERVER_PORT:-8080}
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-quizapp}
+      POSTGRES_USER: ${POSTGRES_USER:-quizapp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-quizapp}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-https://localhost}
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+      args:
+        QUIZ_SERVER_URL: ${QUIZ_SERVER_URL:-wss://localhost/ws}
+        QUIZ_API_URL: ${QUIZ_API_URL:-https://localhost}
+    restart: unless-stopped
+    depends_on:
+      - server
+
+  proxy:
+    image: nginx:alpine
+    restart: unless-stopped
+    depends_on:
+      - server
+      - web
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+
+volumes:
+  quizapp_redis:
+  quizapp_postgres:

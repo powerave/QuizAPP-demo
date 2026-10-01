@@ -1,0 +1,16 @@
+FROM ghcr.io/cirruslabs/flutter:stable AS build
+
+WORKDIR /app
+ARG QUIZ_SERVER_URL=wss://localhost/ws
+ARG QUIZ_API_URL=https://localhost
+
+COPY . .
+RUN flutter pub get
+RUN flutter create . --platforms web
+RUN flutter build web --release \
+  --dart-define=QUIZ_SERVER_URL=${QUIZ_SERVER_URL} \
+  --dart-define=QUIZ_API_URL=${QUIZ_API_URL}
+
+FROM nginx:alpine
+COPY --from=build /app/build/web /usr/share/nginx/html
+EXPOSE 80
