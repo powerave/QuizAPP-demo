@@ -2,7 +2,7 @@
 
 Application de quiz Flutter avec salons multijoueurs.
 
-> **Important : Brave n'affiche pas correctement le HTTPS local de cette démo.**
+> **Important : Brave n'affiche pas correctement le HTTPS local de cette démo.**  
 > Utilisez Firefox ou un autre navigateur pour accéder à l'application.
 
 ## Démarrage rapide
