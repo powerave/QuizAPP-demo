@@ -4,7 +4,7 @@ Application mobile de quiz Flutter avec Riverpod.
 
 ## Démarrage HTTPS local avec Docker
 
- *******************************************************************
+ ##*******************************************************************
  Utiliser un autre navigateur que BRAVE pour un affichage HTTPS (sur firefox ca fonctionne parfaitement)
  *******************************************************************
 
